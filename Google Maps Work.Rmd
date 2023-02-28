@@ -1,0 +1,766 @@
+---
+title: "Census API Work"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Access Census Data Files
+library(tidycensus)
+
+# Access Tiger Files (census map files)
+library(tigris)
+
+# work with spatial objects, note: sf = "simple features"
+library(sf)
+library(sp)
+
+# other useful packages
+library(tidyverse)
+library(viridis)
+library(dplyr)
+library(stringr)
+#census_api_key("eb2fc06ce454a7690661a2186c95aaa320215498", install = TRUE)
+# First time, reload your environment so you can use the key without restarting R.
+readRenviron("~/.Renviron")
+# Go Get my Census API Key from my environmental variables
+Sys.getenv("CENSUS_API_KEY")
+```
+
+```{r}
+demographic_vars <- c(
+Population = "B02001_001",
+Hispanic = "B03002_013",
+White = "B02001_002",
+Black = "B02009_001",
+Asian = "B02015_001",
+Median_Inc = "B06011_001"
+)
+# access the census data
+AlleghenyBlockGroups <- get_acs(geography = "cbg", 
+              variables = demographic_vars, 
+              state = "PA", 
+              county = "ALLEGHENY",
+              survey = "acs5",
+              year = 2018)
+AlleghenyBlockGroups<-as.data.frame(AlleghenyBlockGroups)
+
+#Tigris boundaries
+Allegheny_BG <- block_groups("PA", "Allegheny", year= 2018,)
+
+#setwd("/Users/4victoria98/Downloads/Pittsburgh_Parks")
+#parksfile <- st_read("Pittsburgh_Parks.shp")
+```
+
+```{r Merge_to_our_maps}
+# First Extract Data sets for Black, Population and Median Income
+
+Black <- subset(AlleghenyBlockGroups, variable == "Black") %>% select(GEOID, estimate)
+Black <- setNames(Black, c("GEOID","Black"))
+
+Population <- subset(AlleghenyBlockGroups, variable == "Population") %>% select(GEOID, estimate)
+Population <- setNames(Population, c("GEOID","Population"))
+
+# now use the SF package to merge these things back to the tract map based on GEOID
+
+Combined <- geo_join (Allegheny_BG, Black, "GEOID", "GEOID" )
+Combined <- geo_join (Combined, Population, "GEOID", "GEOID" )
+
+# generate Percent black
+Combined$Pct_Black <- Combined$Black/Combined$Population
+
+# get rid of NA
+Combined[is.na(Combined)] <- 0
+
+```
+
+```{r Map_tracts}
+Combined$INTPTLAT<-as.numeric(Combined$INTPTLAT)
+Combined$INTPTLON<-as.numeric(Combined$INTPTLON)
+New_combined<-Combined%>%filter(INTPTLAT>=40.37&INTPTLAT<=40.5&INTPTLON>=-80.1&INTPTLON<=-79.87)
+
+# Percent Black
+
+ggplot(New_combined, aes(fill = Pct_Black))+
+  geom_sf(, colour = NA) +
+  ggtitle("Percent Black in Block Group")+
+  geom_sf(data = parksfile, fill= "green") +theme_bw()
+
+
+```
+
+
+
+
+```{r}
+ggplot(Allegheny_BG)+
+  geom_sf(data= Allegheny_BG$geometry, fill=NA)+
+  geom_sf(data = parksfile, fill= "green") + theme_bw()
+```
+
+```{r}
+municipalities<-st_read("/Users/4victoria98/Downloads/Capstone/Re_ Pittsburgh Park Conservancy Meeting/LandRecords_LANDRECORDS_OWNER_Municipalities.shp")
+```
+```{r}
+#View(municipalities)
+pitt_municipality_shape<-municipalities%>%filter(NAME=="PITTSBURGH")
+View(pitt_municipality_shape)
+```
+
+
+#CHANGE THE CRS SO THAT WE CAN FILTER DOWN TO BLOCK GROUPS THAT ARE IN THE PITTSBURGH MUNICIPALITY
+```{r}
+Pittsburgh_crs <- Pittsburgh1
+pitt_municipality_shape_crs <- st_transform(pitt_municipality_shape, "NAD83")
+filtered<- Pittsburgh_crs%>%sf::st_filter(pitt_municipality_shape_crs)
+st_geometry(Pittsburgh1)
+#st_geometry(pitt_municipality_shape)
+#newData <- spTransform(Pittsburgh1,CRS(pitt_municipality_shape))
+```
+
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered$geometry, fill=NA)+
+  geom_sf(data = parksfile, fill= "green") + geom_sf(data=pitt_municipality_shape_crs, fill="blue", alpha=.1, color=NA)
+```
+
+
+```{r}
+Allegheny_BG$INTPTLAT<-as.numeric(Allegheny_BG$INTPTLAT)
+Allegheny_BG$INTPTLON<-as.numeric(Allegheny_BG$INTPTLON)
+Pittsburgh1<-Allegheny_BG%>%filter(INTPTLAT>=40.37&INTPTLAT<=40.5&INTPTLON>=-80.1&INTPTLON<=-79.87)
+ggplot(Pittsburgh1)+
+  geom_sf(data= Pittsburgh1$geometry, fill=NA)+
+  geom_sf(data = parksfile, fill= "green")
+```
+```{r}
+View(parksfile)
+```
+
+```{r}
+entrance_mellon<-data.frame(x=-79.9191390, y = 40.4518664)
+```
+```{r}
+mellon_park<-Allegheny_BG%>%filter(INTPTLAT>=40.4373664 & INTPTLAT<=(40.4663664)&INTPTLON>=-79.933639&INTPTLON<=-79.904639)
+```
+
+```{r}
+mellon_park
+```
+
+```{r}
+View(mellon_park)
+```
+
+```{r}
+mellon_shape<-parksfile%>%filter(updatepknm=="Mellon Park")
+```
+
+
+```{r}
+mellon_park$walk_mins<-0
+mellon_park$centroid<-0
+mellon_park$centroid<-paste(mellon_park$INTPTLAT, mellon_park$INTPTLON, sep = ", ")
+
+for(i in 1:31){
+  mellon_park$walk_mins[i]<-gmapsdistance(origin=mellon_park$centroid[i], destination = "40.4518664, -79.9191390", mode = "walking")$Time / 60
+}
+
+```
+
+
+
+```{r}
+ggplot(mellon_park)+
+  geom_sf(data= mellon_park, aes(fill=walk_mins)) +   geom_sf(data = mellon_shape, fill= "green")+ geom_point(aes(x=-79.9191390, y = 40.4518664), color="yellow", size=3) + xlab("Longitude") + ylab("Latitude") + ggtitle("Walking Distance From Mellon Park")+ theme_bw() + labs(fill = "Minutes of Walking")  
+```
+
+```{r}
+Pittsburgh<-Allegheny_BG%>%filter(INTPTLAT>=40.46462&INTPTLAT<=40.49362&INTPTLON>=-79.9301969&INTPTLON<=-79.9011969)
+```
+
+
+
+```{r}
+Pittsburgh$walk_mins<-0
+Pittsburgh$centroid<-0
+Pittsburgh$centroid<-paste(Pittsburgh$INTPTLAT, Pittsburgh$INTPTLON, sep = ", ")
+
+for(i in 1:21){
+  Pittsburgh$walk_mins[i]<-gmapsdistance(origin=Pittsburgh$centroid[i], destination = "40.4791211, -79.9156969", mode = "walking")$Time / 60
+}
+
+```
+
+
+
+
+```{r}
+
+ggplot(Pittsburgh)+
+  geom_sf(data= Pittsburgh, aes(fill=walk_mins)) +    geom_sf(data = parks, fill= "green")+ geom_point(aes(x=-79.9156969, y = 40.4791211), color="yellow", size=5) + xlab("Longitude") + ylab("Latitude") + ggtitle("Walking Distance From Highland Park")+ theme_bw() + labs(fill = "Minutes of Walking") #+ scale_fill_viridis_c(option = "magma",begin = 0, end = .99) + 
+```
+
+
+```{r}
+Pittsburgh1<-Allegheny_BG%>%filter(INTPTLAT>=40.37&INTPTLAT<=40.5&INTPTLON>=-80.1&INTPTLON<=-79.87)
+ggplot(Pittsburgh1)+
+  geom_sf(data= Pittsburgh1$geometry, fill=NA)+
+  geom_sf(data = parksfile, fill= "green")+
+  geom_sf(data= Pittsburgh, aes(fill=walk_mins)) +    geom_sf(data = parks, fill= "green") + geom_point(aes(x=-79.9156969, y = 40.4791211), color="yellow", size=2) + xlab("Longitude") + ylab("Latitude") + ggtitle("Municpality of Pittsburgh")+ theme_bw() + labs(fill = "Minutes of Walking") +
+  geom_sf(data= mellon_park, aes(fill=walk_mins)) +   geom_sf(data = mellon_shape, fill= "green")+ geom_point(aes(x=-79.9191390, y = 40.4518664), color="yellow", size=1) 
+```
+
+#CREATE SMALL PARKS FILE AND TRY TO GET NEAREST DISTANCES FOR SMALL PARKS
+```{r}
+small_parks<-parksfile %>% filter(acreage<=1)
+```
+
+```{r}
+#install.packages("geosphere")
+```
+```{r}
+library(geosphere)
+```
+
+#TRY TO GET LATITUDE AND LONGITUDE THEN GET CENTROID
+```{r}
+small_parks$centroid<-st_centroid(small_parks$geometry)
+for(i in 1:73){
+  temp<-unlist(small_parks$centroid[i])
+  small_parks$center_long[i]<-temp[1]
+  small_parks$center_lat[i]<-temp[2]
+}
+```
+
+
+
+
+#GRAPH TO CHECK
+```{r}
+practice<-small_parks[5,]
+ggplot(practice) + xlab("Longitude") + ylab("Latitude") + ggtitle("Municpality of Pittsburgh")+ theme_bw() + labs(fill = "Minutes of Walking") +    geom_sf(data = practice, fill= "green") + geom_point(aes(x=practice$center_long, y = practice$center_lat), color="yellow", size=8)
+```
+
+#COME UP WITH DISTANCE TO NEAREST PARK
+```{r}
+#WHAT DO I WANT TO DO:
+#FOR EACH BG
+  # 1.) FIND NEAREST SMALL PARK
+  # 2.) CALCULATE WALKING DISTANCE FROM PARK
+
+Pittsburgh1$walk_nearest_park<-999
+Pittsburgh1$centroid_as.string<-paste(as.character(Pittsburgh1$INTPTLAT), as.character(Pittsburgh1$INTPTLON), sep = ", ")
+small_parks$centroid_as.string<-paste(as.character(small_parks$center_lat), as.character(small_parks$center_long), sep = ", ")
+
+
+for(i in 1:538){
+  dif_lat<-(Pittsburgh1$INTPTLAT[i]-small_parks$center_lat)^2
+  dif_lon<-(Pittsburgh1$INTPTLON[i]-small_parks$center_long)^2
+  dist<-sqrt(dif_lat+dif_lon)
+  min_place<-which.min(dist)
+
+  Pittsburgh1$walk_nearest_park[i]<-gmapsdistance(origin=Pittsburgh1$centroid_as.string[i], destination = small_parks$centroid_as.string[min_place], mode = "walking")$Time / 60
+}
+
+```
+
+#COME UP WITH DRIVING DISTANCE TO HIGHLAND PARK
+```{r}
+
+parksfile$centroid<-st_centroid(parksfile$geometry)
+
+for(i in 1:213){
+  temp<-unlist(parksfile$centroid[i])
+  parksfile$center_long[i]<-temp[1]
+  parksfile$center_lat[i]<-temp[2]
+}
+
+filtered$drive_highland<-999
+filtered$centroid_as.string<-paste(as.character(filtered$INTPTLAT), as.character(filtered$INTPTLON), sep = ", ")
+parksfile$centroid_as.string<-paste(as.character(parksfile$center_lat), as.character(parksfile$center_long), sep = ", ")
+highland<-parksfile%>%filter(origpkname=="Highland Park")
+parking_coords=c("40.4748031, -79.9088601", "40.4792359, -79.9133036", "40.4828638, -79.9118076", "40.4858601, -79.9208788")
+
+#parking_longs<-c("-79.9088601", "-79.9133036", "-79.9118076", "-79.9208788")
+
+
+for(block_group in 1:429){
+  dist<-rep(0,4)
+  for(coord in 1:4){
+    dist[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = parking_coords[coord], mode = "driving")$Time / 60
+
+  }
+  filtered$drive_highland[block_group]<-min(dist)
+}
+
+```
+
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_highland)) +   geom_sf(data = highland, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Highland") 
+```
+
+#COME UP WITH DRIVING DISTANCE TO FRICK PARK 
+```{r}
+
+
+filtered$drive_frick<-999
+frick<-parksfile%>%filter(origpkname=="Frick Park")
+parking_coords=c("40.4465733, -79.9018713", "40.4369412, -79.8967923", "40.4287079, -79.8923032", "40.4263165, -79.9061038", "40.4143663, -79.9166029",  "40.4293789, -79.9135604",  "40.4368397, -79.9084347")
+
+for(block_group in 1:429){
+  dist<-rep(0,7)
+  for(coord in 1:7){
+    dist[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = parking_coords[coord], mode = "driving")$Time / 60
+
+  }
+  filtered$drive_frick[block_group]<-min(dist)
+}
+
+
+```
+
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_frick)) +   geom_sf(data = frick, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Frick") 
+```
+
+
+#COME UP WITH DRIVING DISTANCE TO RIVERVIEW PARK
+```{r}
+filtered$drive_riverview<-999
+riverview<-parksfile%>%filter(origpkname=="Riverview Park")
+
+parking_coords=c("40.4882787, -80.0219464", "40.4822617, -80.0211579", "40.4819460, -80.0185125", "40.4787574, -80.0199167")
+
+for(block_group in 1:429){
+  dist<-rep(0,4)
+  for(coord in 1:4){
+    dist[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = parking_coords[coord], mode = "driving")$Time / 60
+
+  }
+  filtered$drive_riverview[block_group]<-min(dist)
+}
+
+```
+
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_riverview)) +   geom_sf(data = riverview, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Riverview") 
+```
+
+
+#COME UP WITH DRIVING DISTANCE TO EMERALD VIEW PARK
+```{r}
+
+filtered$drive_emerald_view<-999
+emerald_view<-parksfile%>%filter(alterntnam=="Emerald View Regional Park")
+parking_coords=c("40.4382725, -80.0305674", "40.4330890, -80.0247400", "40.4304558, -80.0192102", "40.4299638, -80.0036075")
+
+
+for(block_group in 1:429){
+  dist<-rep(0,4)
+  for(coord in 1:4){
+    dist[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = parking_coords[coord], mode = "driving")$Time / 60
+
+  }
+  
+  filtered$drive_emerald_view[block_group]<-min(dist)
+}
+
+```
+
+#COME UP WITH DRIVING DISTANCE TO SCHENLEY VIEW PARK
+```{r}
+
+filtered$drive_schenley<-999
+schenley<-parksfile%>%filter(alterntnam=="Schenley Park")
+parking_coords=c("40.4433531, -79.9528608", "40.4394195, -79.9438876", "40.4359880, -79.9471918", "40.4300965, -79.9503380", "40.4319287, -79.9426842", "40.4306343, -79.9378139", "40.4334242, -79.9343508")
+
+
+for(block_group in 1:429){
+  dist<-rep(0,7)
+  for(coord in 1:7){
+    dist[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = parking_coords[coord], mode = "driving")$Time / 60
+
+  }
+  
+  filtered$drive_schenley[block_group]<-min(dist)
+}
+
+```
+
+
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_emerald_view)) +   geom_sf(data = emerald_view, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Riverview") 
+```
+
+
+
+
+#COME UP WITH WALKING AND TRANSIT DISTANCE TO HIGHLAND PARK
+```{r}
+filtered$walk_highland<-999
+
+filtered$bus_highland<-999
+
+entrance_coords=c("40.4754078, -79.9106177", "40.4775790, -79.9137116", "40.4786420, -79.9160834", "40.4795241, -79.9186665", "40.4799714, -79.9197147", "40.4874482, -79.9182595", "40.4832795, -79.9084971")
+
+
+for(block_group in 1:429){
+  dist_walk<-rep(0,7)
+  dist_bus<-rep(0,7)
+  for(coord in 1:7){
+    dist_walk[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "walking")$Time / 60
+    dist_bus[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "transit")$Time / 60
+  }
+  
+  filtered$walk_highland[block_group]<-min(dist_walk)
+  filtered$bus_highland[block_group]<-min(dist_bus)
+
+}
+
+```
+
+#COME UP WITH WALKING AND TRANSIT DISTANCE TO RIVERVIEW PARK
+```{r}
+filtered$walk_riverview<-999
+
+filtered$bus_riverview<-999
+
+entrance_coords=c("40.4787562, -80.0120263", "40.4775496, -80.0184257", "40.4795906, -80.0118493", "40.4838777, -80.0132366", "40.4827671, -80.0181776", "40.4860102, -80.0226679", "40.4855066, -80.0234807")
+
+
+for(block_group in 1:429){
+  dist_walk<-rep(0,7)
+  dist_bus<-rep(0,7)
+  for(coord in 1:7){
+    dist_walk[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "walking")$Time / 60
+    dist_bus[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "transit")$Time / 60
+  }
+  
+  filtered$walk_riverview[block_group]<-min(dist_walk)
+  filtered$bus_riverview[block_group]<-min(dist_bus)
+
+}
+
+```
+
+#COME UP WITH WALKING AND TRANSIT DISTANCE TO EMERALD VIEW PARK
+```{r}
+filtered$walk_emerald_view<-999
+
+filtered$bus_emerald_view<-999
+
+entrance_coords=c("40.4390972, -80.0303293", "40.4364092, -80.0274571", "40.4394063, -80.0214194", "40.4356076, -80.0122784", "40.4258173, -79.9924056", "40.4297817, -80.0195278", "40.4323209, -80.0176553", "40.4260500, -80.0162518", "40.4246606, -80.0134702", "40.4301167, -80.0035448", "40.4261947, -79.9976856")
+
+
+for(block_group in 1:429){
+  dist_walk<-rep(0,11)
+  dist_bus<-rep(0,11)
+  for(coord in 1:11){
+    dist_walk[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "walking")$Time / 60
+    dist_bus[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "transit")$Time / 60
+  }
+  
+  filtered$walk_emerald_view[block_group]<-min(dist_walk)
+  filtered$bus_emerald_view[block_group]<-min(dist_bus)
+
+}
+
+```
+
+#COME UP WITH WALKING AND TRANSIT DISTANCE TO FRICK PARK
+```{r}
+filtered$walk_frick<-999
+
+filtered$bus_frick<-999
+
+entrance_coords=c("40.4154867, -79.9171743", "40.4172801, -79.9177389", "40.4250141, -79.9096098", "40.4242909, -79.9048567", "40.4273813, -79.9057078", "40.4318531, -79.8993822", "40.4282536, -79.8923957", "40.4371898, -79.8969786", "40.4395601, -79.8977122", "40.4395575, -79.8993634", "40.4417061, -79.8994466","40.4423607, -79.8993771", "40.4447002, -79.8998902", "40.4458244, -79.9013503", "40.4463066, -79.9032040", "40.4453329, -79.9042321", "40.4392837, -79.9012169", "40.4358128, -79.9092833", "40.4303570, -79.9151294")
+
+
+for(block_group in 1:429){
+  dist_walk<-rep(0,19)
+  dist_bus<-rep(0,19)
+  for(coord in 1:19){
+    dist_walk[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "walking")$Time / 60
+    dist_bus[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "transit")$Time / 60
+  }
+  
+  filtered$walk_frick[block_group]<-min(dist_walk)
+  filtered$bus_frick[block_group]<-min(dist_bus)
+
+}
+
+```
+
+#COME UP WITH WALKING AND TRANSIT DISTANCE TO SCHENLEY PARK
+```{r}
+filtered$walk_schenley<-999
+
+filtered$bus_schenley<-999
+
+entrance_coords=c("40.4433531, -79.9528608", "40.4419450, -79.9526951", "40.4411728, -79.9476851", "40.4404088, -79.9422077", "40.4379740, -79.9333580", "40.4351975, -79.9341185", "40.4345119, -79.9331740", "40.4319537, -79.9331264", "40.4303375, -79.9328958", "40.4365276, -79.9500408", "40.4346630, -79.9484150", "40.4290654, -79.9495110")
+
+
+for(block_group in 1:429){
+  dist_walk<-rep(0,12)
+  dist_bus<-rep(0,12)
+  for(coord in 1:12){
+    dist_walk[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "walking")$Time / 60
+    dist_bus[coord]<-gmapsdistance(origin=filtered$centroid_as.string[block_group], destination = entrance_coords[coord], mode = "transit")$Time / 60
+  }
+  
+  filtered$walk_schenley[block_group]<-min(dist_walk)
+  filtered$bus_schenley[block_group]<-min(dist_bus)
+}
+
+```
+
+#Map transit times to Emerald View Park
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_emerald_view)) +   geom_sf(data = emerald_view, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Emerald View") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=walk_emerald_view)) +   geom_sf(data = emerald_view, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Walk Time to Emerald View") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=bus_emerald_view)) +   geom_sf(data = emerald_view, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Busing Time to Emerald View") 
+```
+#Map transit times to Schenley Park
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_schenley)) +   geom_sf(data = schenley, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Schenley") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=walk_schenley)) +   geom_sf(data = schenley, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Walk Time to Schenley") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=bus_schenley)) +   geom_sf(data = schenley, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Busing Time to Schenley") 
+```
+#Map transit times to Highland Park
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_highland)) +   geom_sf(data = highland, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Highland") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=walk_highland)) +   geom_sf(data = highland, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Walk Time to Highland") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=bus_highland)) +   geom_sf(data = highland, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Busing Time to Highland") 
+```
+#Map Transit times to Frick Park
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_frick)) +   geom_sf(data = frick, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Frick") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=walk_frick)) +   geom_sf(data = frick, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Walk Time to Frick") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=bus_frick)) +   geom_sf(data = frick, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Busing Time to Frick") 
+```
+
+#View transit times to Riverview Park
+```{r}
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=drive_riverview)) +   geom_sf(data = riverview, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Driving Time to Riverview") 
+ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=walk_riverview)) +   geom_sf(data = riverview, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Walk Time to Riverview") 
+plot<-ggplot(filtered)+
+  geom_sf(data= filtered, aes(fill=bus_riverview)) +   geom_sf(data = riverview, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Busing Time to Riverview") 
+```   
+
+```{r}
+ggplot(Pittsburgh1)+
+  geom_sf(data= Pittsburgh1, aes(fill=walk_nearest_park)) +   geom_sf(data = small_parks, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municipality of Pittsburgh")+ theme_bw() + labs(fill = "Minutes of Walking") 
+```
+
+```{r}
+Pittsburgh1_smaller<-Pittsburgh1%>%filter(walk_nearest_park<30)
+ggplot(Pittsburgh1)+
+    geom_sf(data = small_parks, fill= "green") + xlab("Longitude") + ylab("Latitude") + ggtitle("Municpality of Pittsburgh")+ theme_bw() + labs(fill = "Minutes of Walking") + geom_sf(data= Pittsburgh1, fill="white") + geom_sf(data= Pittsburgh1_smaller, aes(fill=walk_nearest_park))
+```
+
+#Install and load plotly, the interactive maps package
+```{r}
+install.packages("plotly")
+library(plotly)
+```
+
+#CHANGE THE CRS SO THAT WE CAN USE PLOTLY
+```{r}
+pittsburgh_interactive <- st_transform(filtered, "WGS84")
+```
+
+```{r}
+pittsburgh_interactive$index<-1:429
+```
+
+#Make driving, walking, and busing times numeric values and round to nearest whole number
+```{r}
+
+pittsburgh_interactive$drive_frick<-round(as.numeric(pittsburgh_interactive$drive_frick), digits=0)
+pittsburgh_interactive$walk_frick<-round(as.numeric(pittsburgh_interactive$walk_frick), digits=0)
+pittsburgh_interactive$bus_frick<-round(as.numeric(pittsburgh_interactive$bus_frick), digits=0)
+
+pittsburgh_interactive$drive_highland<-round(as.numeric(pittsburgh_interactive$drive_highland), digits=0)
+pittsburgh_interactive$walk_highland<-round(as.numeric(pittsburgh_interactive$walk_highland), digits=0)
+pittsburgh_interactive$bus_highland<-round(as.numeric(pittsburgh_interactive$bus_highland), digits=0)
+
+pittsburgh_interactive$drive_schenley<-round(as.numeric(pittsburgh_interactive$drive_schenley), digits=0)
+pittsburgh_interactive$walk_schenley<-round(as.numeric(pittsburgh_interactive$walk_schenley), digits=0)
+pittsburgh_interactive$bus_schenley<-round(as.numeric(pittsburgh_interactive$bus_schenley), digits=0)
+
+pittsburgh_interactive$drive_riverview<-round(as.numeric(pittsburgh_interactive$drive_riverview), digits=0)
+pittsburgh_interactive$walk_riverview<-round(as.numeric(pittsburgh_interactive$walk_riverview), digits=0)
+pittsburgh_interactive$bus_riverview<-round(as.numeric(pittsburgh_interactive$bus_riverview), digits=0)
+
+pittsburgh_interactive$drive_emerald_view<-round(as.numeric(pittsburgh_interactive$drive_emerald_view), digits=0)
+pittsburgh_interactive$walk_emerald_view<-round(as.numeric(pittsburgh_interactive$walk_emerald_view), digits=0)
+pittsburgh_interactive$bus_emerald_view<-round(as.numeric(pittsburgh_interactive$bus_emerald_view), digits=0)
+
+```
+
+#Make interactive map with transit time to highland park
+```{r}
+plot<-plot_ly(
+  pittsburgh_interactive, 
+  split = ~index, 
+  color=~"blue",
+  text = ~paste("Highland Park ", "\nwalk:", walk_highland, "minutes", "\ndriving:", drive_highland, "minutes", "\nbusing:", bus_highland, "minutes"),
+  hoveron = "fills",
+  hoverinfo = "text",
+  showlegend = FALSE
+)
+
+plot
+```
+
+
+#Try to download map
+```{r}
+htmlwidgets::saveWidget(as_widget(plot), "/Users/4victoria98/Downloads/interactive_map.html")
+```
+#Download filtered as a shape file
+```{r}
+#st_write(filtered, "/Users/4victoria98/Downloads/Pitssburgh_Transit.shp")
+```
+
+#Merge filtered with race data
+```{r}
+transit_and_black<-filtered
+transit_and_black$percent_black<-Combined$Pct_Black
+#CHECK IF VECTORS ARE THE SAME
+```
+
+```{r}
+parks2018<-read_csv('/Users/4victoria98/Downloads/PittParks2018_aggregate.csv')
+```
+
+
+```{r, warnings=FALSE}
+highland2018<-parks2018%>%filter(location_name=="Highland Park")
+
+for (i in 1:nrow(highland2018)){
+  if (i==1){ #first row create new df
+    highlandhomecbgs2018<-unlist(strsplit(highland2018$visitor_home_cbgs[i],","))
+    highlandhomecbgs2018<-str_replace_all(highlandhomecbgs2018, '[""]', '')
+    highlandhomecbgs2018<-str_replace_all(highlandhomecbgs2018, '[{}]', '')
+    highlandhomecbgs2018<-as.data.frame(highlandhomecbgs2018)
+    colnames(highlandhomecbgs2018)[1]='GEOID'
+    highlandhomecbgs2018$Month<-1
+  }
+  else{ #all other rows rbind data to df
+    temp<-unlist(strsplit(highland2018$visitor_home_cbgs[i],","))
+    temp<-str_replace_all(temp, '[""]', '')
+    temp<-str_replace_all(temp, '[{}]', '')
+    temp<-as.data.frame(temp)
+    colnames(temp)[1]='GEOID'
+    temp$Month<-i
+    highlandhomecbgs2018<-rbind(temp,highlandhomecbgs2018)
+  }
+}
+
+highlandhomecbgs2018<-separate(highlandhomecbgs2018,GEOID,into=c('GEOID','home_cbg_count'),sep = ':')
+
+#Aggregate Visitors
+highlandhomecbgs2018$home_cbg_count<-as.numeric(highlandhomecbgs2018$home_cbg_count)
+
+highland2018_total<-highlandhomecbgs2018 %>%group_by(GEOID)%>%summarise(num = n(),total = sum(home_cbg_count))
+
+
+highland2018_combined<-geo_join(Pittsburgh,highland2018_total,"GEOID","GEOID",how='left')
+
+highland_map<-parksfile%>%filter(origpkname=="Highland Park")
+# get rid of NA
+#highland2018_combined[is.na(highland2018_combined)] <- 0
+
+# Put on Map
+ggplot(highland2018_combined, aes(fill = log(total)))+
+  geom_sf(, colour = NA) +
+  scale_fill_viridis_c(option="C",begin = 0, end = .99) + 
+   geom_sf(data = highland_map, fill= "forest green")+
+  ggtitle("Highland Park Vistor HeatMap All Months 2018")
+# divide CBGs into pecentiles (decile?)
+```
+
+```{r}
+transit_black_cellphone<-transit_and_black
+transit_black_cellphone$total<-highland2018_combined$total
+```
+
+```{r}
+model<-lm(total~walk_highland+bus_highland+drive_highland+percent_black, transit_black_cellphone)
+summary(model)
+```
+
+
+```{r, warnings=FALSE}
+parks2018<-read_csv('/Users/4victoria98/Downloads/PittParks2018_aggregate.csv')
+
+for (i in 1:nrow(parks2018)){
+  if (i==1){ #first row create new df
+    parkhomecbgs2018<-unlist(strsplit(highland2018$visitor_home_cbgs[i],","))
+    parkhomecbgs2018<-str_replace_all(highlandhomecbgs2018, '[""]', '')
+    parkhomecbgs2018<-str_replace_all(highlandhomecbgs2018, '[{}]', '')
+    parkhomecbgs2018<-as.data.frame(highlandhomecbgs2018)
+    colnames(parkhomecbgs2018)[1]='GEOID'
+    parkhomecbgs2018$Month<-1
+  }
+  else{ #all other rows rbind data to df
+    temp<-unlist(strsplit(parks2018$visitor_home_cbgs[i],","))
+    temp<-str_replace_all(temp, '[""]', '')
+    temp<-str_replace_all(temp, '[{}]', '')
+    temp<-as.data.frame(temp)
+    colnames(temp)[1]='GEOID'
+    temp$Month<-i
+    parkhomecbgs2018<-rbind(temp,parkhomecbgs2018)
+  }
+}
+
+highlandhomecbgs2018<-separate(highlandhomecbgs2018,GEOID,into=c('GEOID','home_cbg_count'),sep = ':')
+
+#Aggregate Visitors
+highlandhomecbgs2018$home_cbg_count<-as.numeric(highlandhomecbgs2018$home_cbg_count)
+
+highland2018_total<-highlandhomecbgs2018 %>%group_by(GEOID)%>%summarise(num = n(),total = sum(home_cbg_count))
+
+
+highland2018_combined<-geo_join(Pittsburgh,highland2018_AVG,"GEOID","GEOID",how='left')
+
+# get rid of NA
+#highland2018_combined[is.na(highland2018_combined)] <- 0
+
+# Put on Map
+ggplot(highland2018_combined, aes(fill = log(total)))+
+  geom_sf(, colour = NA) +
+  scale_fill_viridis_c(option="C",begin = 0, end = .99) + 
+   geom_sf(data = parksfile, fill= "forest green")+
+  ggtitle("Highland Park Vistor HeatMap All Months 2018")
+# divide CBGs into pecentiles (decile?)
+```
+
+```{r}
+library(gmapsdistance)
+```
+
+

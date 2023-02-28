@@ -1,0 +1,143 @@
+---
+title: "Checking_Numbers"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r read_in_data}
+
+#Find all of the directory names
+
+parentdir <- "/Users/4victoria98/Downloads/2020PittPlacesByMonths"
+
+
+#get a list of all files with ndvi in the name in your directory
+directories<-list.files(path=parentdir, full.names = TRUE)
+
+for (directory in directories){
+
+  print(directory)
+  temp <- read.csv(directory)
+  
+  if (exists("SF_Data_Pittsburgh")) {
+    pittsburgh_cell<-rbind(pittsburgh_cell, temp)
+  } else {
+    pittsburgh_cell<-temp
+  }
+  
+  
+  
+}
+
+
+```
+
+```{r}
+pittsburgh_cell<-pittsburgh_cell%>%filter(!is.na(pittsburgh_cell$visitor_home_cbgs))
+for(i in 16:nrow(pittsburgh_cell)){
+  if(i==16){
+    pittsburgh_cell_copy<-pittsburgh_cell[i,]
+  }
+  else if(pittsburgh_cell[i,"visitor_home_cbgs"]!="" & pittsburgh_cell[i,"visitor_home_cbgs"]!="{}"){
+    temp<-pittsburgh_cell[i,]
+    pittsburgh_cell_copy<-rbind(temp,pittsburgh_cell_copy)
+  }
+}
+```
+
+
+```{r, warnings=FALSE}
+for (i in 1:nrow(pittsburgh_cell_copy)){
+  if (i==1){ #first row create new df
+    pittsburgh_cbgs<-unlist(strsplit(pittsburgh_cell_copy$visitor_home_cbgs[i],","))
+    pittsburgh_cbgs<-str_replace_all(pittsburgh_cbgs, '[""]', '')
+    pittsburgh_cbgs<-str_replace_all(pittsburgh_cbgs, '[{}]', '')
+    pittsburgh_cbgs<-as.data.frame(pittsburgh_cbgs)
+    colnames(pittsburgh_cbgs)[1]='GEOID'
+    pittsburgh_cbgs$Month<-1
+  }
+  else{ #all other rows rbind data to df
+    temp<-unlist(strsplit(pittsburgh_cell_copy$visitor_home_cbgs[i],","))
+    temp<-str_replace_all(temp, '[""]', '')
+    temp<-str_replace_all(temp, '[{}]', '')
+    temp<-as.data.frame(temp)
+    colnames(temp)[1]='GEOID'
+    temp$Month<-i
+    pittsburgh_cbgs<-rbind(temp,pittsburgh_cbgs)
+  }
+}
+
+pittsburgh_cbgs<-separate(pittsburgh_cbgs,GEOID,into=c('GEOID','home_cbg_count'),sep = ':')
+
+#Aggregate Visitors
+pittsburgh_cbgs$home_cbg_count<-as.numeric(pittsburgh_cbgs$home_cbg_count)
+
+pittsburgh_cell_total2020<-pittsburgh_cbgs %>%group_by(GEOID)%>%summarise(num = n(),total = sum(home_cbg_count))
+
+
+pittsburgh_cell_combined<-geo_join(transit_and_black,pittsburgh_cell_total2020,"GEOID","GEOID",how='left')
+
+View(pittsburgh_cell_combined)
+# get rid of NA
+#highland2018_combined[is.na(highland2018_combined)] <- 0
+```
+
+```{r}
+# Put on Map
+ggplot(pittsburgh_cell_combined, aes(fill = total))+
+  geom_sf(, colour = NA) +
+  scale_fill_viridis_c(option="C",begin = 0, end = .99) + 
+  ggtitle("Recorded Home CBG HeatMap All Pittsburgh 2020")
+```
+
+```{r}
+demographic_vars <- c(
+Population = "B02001_001",
+Hispanic = "B03002_013",
+White = "B02001_002",
+Black = "B02009_001",
+Asian = "B02015_001",
+Median_Inc = "B06011_001",
+population="P001001"
+)
+# access the census data
+bgs <- get_acs(geography = "cbg", 
+              variables = demographic_vars, 
+              state = "PA", 
+              county = "ALLEGHENY",
+              survey = "acs5",
+              year = 2018)
+bgs<-as.data.frame(bgs)
+123
+#Tigris boundaries
+AlleghenyBGS <- block_groups("PA", "Allegheny", year= 2018,)
+
+```
+
+#GET POPULATION INFO READY TO BE MERGED WITH CELL AND TRANSIT DATA
+```{r}
+pop_bgs<-bgs%>%filter(variable=="Population")
+df_for_combine<-pop_bgs$GEOID%>%as.data.frame()
+df_for_combine$pop<-pop_bgs$estimate
+colnames(df_for_combine)<-c("GEOID", "pop")
+```
+
+#JOIN POP DATA WITH CELL DATA
+```{r}
+tran_cell_census<-geo_join(transit_black_cellphone,df_for_combine,"GEOID","GEOID",how='left')
+```
+
+#DROP OUTLIER CELLPHONE DATA
+
+
+
+
+
+
+
+
