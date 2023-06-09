@@ -1,0 +1,718 @@
+/*Applies to every page*/
+.topbar ul {
+    list-style:none;
+    margin:0;
+    padding:0px;
+    padding-bottom:10px;
+    position:fixed;
+    top: 0;
+    width: 100%;
+    left:0;
+    background-color:aliceblue;
+    font-size:2vw;
+    height:5%;
+}
+
+.topbar li{
+    float:left;
+    display: block;
+    padding: 8px;
+    background-color: aliceblue; 
+    padding-right:20px;
+}
+
+.topbar li a:hover{
+    text-decoration:none;
+    background-color: royalblue;
+    color: aliceblue;
+}
+
+h1{
+    width:80%;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+h2{
+    width:80%;
+    margin-left:auto;
+    margin-right:auto;
+    font-size:25px;
+    padding-top:15px;
+}
+
+p{
+    width:80%;
+    margin-left:auto;
+    margin-right:auto;
+    font-size:1.8vw;
+}
+
+
+h1{
+    font-size:3vw;
+}
+
+
+/*Applies to Activity.html and Location.html*/
+.sidebar li
+{
+    display:block;
+    padding:50px;
+    padding-left:8px;
+
+}
+.sidebar ul{
+    list-style:none;
+    margin:0;
+    padding:10px;
+    background-color:aliceblue;
+    width:100px;
+    height:300px;
+    padding-top:10px;
+    position:fixed;
+    top:4.5em;
+    width:7%;
+    font-size:2vw;
+}
+
+.sidebar a{
+    width:100px;
+    text-decoration:none;
+}
+
+.sidebar table{
+    width:120px;
+    float:left;
+    padding-right:20px;
+    font-size:130%;
+}
+.sidebar tr:nth-child(odd)
+{
+    background-color: aliceblue;
+}
+.sidebar tr:nth-child(even)
+{
+    background-color: lightblue;
+}
+/*Code Specific for Activity.html*/
+#adventure{
+    padding-left:10px;
+    padding-right: 10px;
+        
+}
+
+img{
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+    padding:50px;
+}
+
+#intro{
+    padding-bottom:140px;
+    font-size:200%;
+}
+
+.adventure1{
+    height:400px;
+    width:500px;
+}
+
+.adventure2{
+    height:400px;
+    width:350px;
+}
+
+.architecture1{
+    height:400px;
+    width:350px;
+}
+
+.architecture2{
+    height:400px;
+    width:500px;
+}
+
+.art1{
+    height:350px;
+    width:570px;
+}
+
+.art2{
+    height:400px;
+    width:550px;
+}
+div.food{
+    height:400px;
+    width:900px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+div.food2{
+    height:370px;
+    width:890px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.food img{
+    display:inline;
+    height:350px;
+    width:400px;
+    padding:10px;
+}
+
+div.food2 img{
+    display:inline;
+    height:330px;
+    width:420px;
+    padding:10px;
+}
+
+.history img{
+    height:350px;
+    width:570px;
+}
+
+.nature1{
+    height:350px;
+    width:570px;
+}
+
+.nature2{
+    height:350px;
+    width:570px;
+}
+
+.relaxation1{
+    height:350px;
+    width:570px;
+}
+
+.relaxation2{
+    height:350px;
+    width:570px;
+}
+
+
+.first{
+    position:relative; left:0; top:2px;
+    width:100%;
+    padding:20px;
+    padding-right:20px;
+    position: relative; top: 50px; 
+}
+
+.h1Home{
+    width:100%;
+    padding:10px;
+    display:inherit;
+    text-align:left;
+}
+
+
+#myBtn {
+  position: fixed; 
+  bottom: 20px; 
+  right: 10px; 
+  border: none; 
+  outline: none; 
+  background-color: aliceblue; 
+  color: black; 
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px; 
+  font-size: 18px; 
+}
+
+#myBtn:hover {
+  background-color: grey; 
+    color:white;
+}
+
+/*Specific code for Location.html*/
+.phuket img{
+    position:relative; left:0px; top:20px;
+    width:280px;
+    height:160px;
+    padding:0;
+    padding-bottom:10px;
+    display:block;
+    float:bottom;
+}
+
+.trail img{
+    width:210px;
+    height:160px;
+    padding:0;
+    padding-bottom:10px;
+    display:block;
+}
+
+.vancouver img{
+    width:280px;
+    height:160px;
+    padding-bottom:10px;
+    display:block;
+    padding:0;
+}
+
+div.column{
+    width:250px;
+}
+
+div.rtcolumn{
+    width:250px;
+    float:right;
+}
+
+div.phuket{
+    width:200px;
+    height:120px;
+    float:left;
+    padding-right:100px;
+    padding-bottom:75px;
+    display:block;
+}
+div.square{
+width:200px;
+    height:120px;
+    float:left;
+    padding-right:100px;
+    padding-bottom:75px;
+    display:block;
+}
+
+div.trail{
+    width:120px;
+    height:120px;
+    float:left;
+    padding-right:100px;
+    padding-bottom:75px;
+    display:block;
+}
+
+div.vancouver{
+    width:200px;
+    height:120px;
+    float:left;
+    padding-right:100px;
+    padding-bottom:75px;
+    display:block;
+}
+
+#Asia{
+    padding-left:10px;
+    padding-right: 10px;
+        
+}
+
+#intro{
+    padding-bottom:140px;
+    font-size:200%;
+}
+
+.DecileMap{
+    height:500px;
+    width:750px;
+}
+
+.Asia2{
+    height:400px;
+    width:500px;
+}
+
+.Africa1{
+    height:400px;
+    width:400px;
+}
+
+.Africa2{
+    height:400px;
+    width:550px;
+}
+
+.SouthAmerica1{
+    height:350px;
+    width:590px;
+}
+
+.SouthAmerica2{
+    height:400px;
+    width:590px;
+}
+.NorthAmerica1{
+    height:400px;
+    width:800px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.NorthAmerica2{
+    height:370px;
+    width:600px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.NorthAmerica img{
+    display:inline;
+    height:350px;
+    width:400px;
+    padding:10px;
+}
+
+div.NorthAmerica2 img{
+    display:inline;
+    height:330px;
+    width:420px;
+    padding:10px;
+}
+
+.Europe1{
+    height:450px;
+    width:600px;
+}
+
+.CellData{
+    height:450px;
+    width:900px;
+}
+.Australia1{
+    height:350px;
+    width:570px;
+}
+
+.Australia2{
+    height:400px;
+    width:650px;
+}
+
+.Antarctica1{
+    height:400px;
+    width:630px;
+}
+
+.Antarctica2{
+    height:350px;
+    width:570px;
+}
+
+li a:hover{
+    text-decoration:none;
+    background-color: royalblue;
+    color: aliceblue;
+}
+
+/*Specific code for Recommended.html*/
+div.Reef{
+    height:400px;
+    width:900px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.Reef img{
+    height:350px;
+    width:400px;
+    padding:10px;
+    display:inline;
+}
+
+.reg{
+    height:600px;
+    width:1200px;
+    padding:10px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+
+.cens{
+    height:300px;
+    width:600px;
+    padding:10px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.Dubai-img{
+    height:450px;
+    width:800px;
+    padding:10px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+
+.tall_reg{
+    height:500px;
+    width:450px;
+    padding:10px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+
+.maps-img{
+    height:100px;
+    width:100px;
+    padding:10px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+/*Code for Safety.html*/
+
+img.case{
+    display:block;
+    float:left;
+    width:300px;
+    height:200px;
+    padding:30px;
+}
+
+div.left
+{
+    padding:0px;
+    width:90%;
+    padding-bottom:0px;
+    padding-left:10px;
+ 
+}
+
+div.right{
+    padding:10px;
+    width:90%;
+    padding-top:0px;
+    display:block;
+    
+}
+
+div.safety{
+    width:100%;
+    display:inline;
+}
+
+/*Code for ContactUs.html*/
+form
+{
+    padding:0px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+    padding-left:130px;
+    padding-top:20px;
+}
+
+input{
+    width:150px;
+    height:50px;
+    padding:0px;
+}
+
+textarea{
+    width:300px;
+    height:200px;
+}
+
+
+.topnav ul {
+    list-style:none;
+    margin:0;
+    padding:0px;
+    padding-bottom:10px;
+    position:fixed;
+    top: 0;
+    width: 100%;
+    left:0;
+    background-color: #333;
+    font-size:2vw;
+    height:5%;
+}
+
+.topnav li{
+    float:left;
+    display: block;
+    padding-right:26px;
+    padding-left:26px;
+    
+
+}
+
+.topbar li a:hover{
+    text-decoration:none;
+    background-color: royalblue;
+    color: aliceblue;
+}
+
+
+
+.topnav {
+  background-color: #333;
+  overflow: hidden;
+    font-size: 18px;
+  border: none;
+    font-family: serif;
+    
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {
+    margin:0;
+ float: left;
+  display: block;
+ color: #f2f2f2;
+  text-align: center;
+ padding: 14px 0px;
+    padding-right: 0px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+
+/* Change the color of links on hover */
+.topnav a:hover {
+    padding:0px;
+    padding-top: 10px;
+    padding-bottom: 12px;
+  background-color: #ddd;
+ color: black;
+}
+
+/* Add an active class to highlight the current page*/
+.topnav a.active {
+	background-color: #506BC9;
+	color: white;
+}
+
+/* Hide the link that should open and close the topnav on small screens */
+.topnav .icon {
+  display: none;
+} 
+
+/* When the screen is less than 600 pixels wide, hide all links, except for the first one ("Home"). Show the link that contains should open and close the topnav (.icon) */
+@media screen and (max-width: 600px) {
+  .topnav a:not(:first-child) {
+	  display: none;
+   }
+  .topnav a.icon {
+    float: right;
+    display: block;
+  }
+}
+/* The "responsive" class is added to the topnav with JavaScript when the user clicks on the icon. This class makes the topnav look good on small screens (display the links vertically instead of horizontally) */
+@media screen and (max-width: 1000px) {
+    .first{
+    position:relative; left:100px; top:2px;
+    width:100%;
+    padding:20px;
+    padding-right:20px;
+    position: relative; top: 50px; 
+}
+.topnav li
+{
+    display:block;
+    padding:0px;
+    padding-left:2px;
+
+}
+.topnav ul{
+    list-style:none;
+    margin:0;
+    padding:50px;
+    background-color:#333;
+    width:70px;
+    height:300px;
+    padding-top:10px;
+    position: fixed;
+    top:0em;
+    width:8.5%;
+    font-size:2vw;
+    padding-left:0px;
+    
+
+}
+
+.topnav a{
+    width:100px;
+    text-decoration:none;
+}
+
+.topnav table{
+    width:120px;
+    float:left;
+    padding-right:20px;
+    font-size:130%;
+}
+.topnav tr:nth-child(odd)
+{
+    background-color: aliceblue;
+}
+.topnav tr:nth-child(even)
+{
+    background-color: lightblue;
+}
+  .topnav.responsive {
+	  position: relative;
+  }
+  .topnav.responsive .icon {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .topnav.responsive a {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+}
+
+.dropbtn {
+  background-color: #333;
+  color: white;
+  padding: 12px;
+    padding-bottom: 10px;
+  font-size: 17px;
+  border: none;
+    font-family: serif;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {background-color: #ddd;}
+
+.dropdown:hover .dropdown-content {display: block;}
+
+.dropdown:hover .dropbtn {background-color: #ddd; color: black;}
