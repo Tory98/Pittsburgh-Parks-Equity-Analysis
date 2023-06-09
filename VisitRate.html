@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html lang = "en">
+<head>
+    <link rel="icon" href="PPC-P-Icon-Green.png" type="image/gif" sizes="16x16">
+  <title>Parks Analysis</title>
+  <meta charset = "UTF-8" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="topnav">
+    <ul>
+        <li><a href="Index.html">Home</a></li>
+        <li><a href="data.html">The Data</a></li>
+        <li><a href="VisitRate.html">VisitRate Description</a></li>
+        <li><a href="HeatMap.html">Visitation Heat Maps</a></li>
+        <li><a href="BarChart.html">Walk Time Bar Charts</a></li>
+        <li><a href="regression.html">Regression Summary</a></li>
+        <li><a href="regression_results.html">Prediction</a></li>
+        <li><a href="AboutUs.html">About Us</a></li>
+    </ul>
+    </div> <br>
+    <br>
+<button onclick="topFunction()" id="myBtn" title="Go to top">Back to Top</button>
+
+<h1 class="first">Visit Rate Explained</h1>
+<br>
+    <h2>What is Vist Rate?</h2>
+    <p>
+    Visit Rate is the total Pings per block group over the four years of collected data divided by the population of each block group
+    </p>
+    <h2>Why use Vist Rate?</h2>
+<p>There are some issues in looking at the raw visitor amount, including:
+    <br>Pings can be representative of more than one visitor (ex. Mother with children)<br>
+Pings can be double counted when aggregating by-month data
+    <br>
+    <br>
+This means that using comparison across block groups tells us more about the true visitation of the parks.
+</p>
+    <h2>Why divide by population?</h2>
+    <p>
+        Without rescaling for population, block groups with really large populations look like they have something about them that causes them to intrinsically favor parks, when really their higher visitation rates are only representative of their larger populations. Dividing by population takes care of this issue.
+    </p>
+    <script>
+mybutton = document.getElementById("myBtn");
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    mybutton.style.display = "block";
+  } else {
+    mybutton.style.display = "none";
+  }
+}
+
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0; 
+}
+</script>
+</body>
+</html>
+
